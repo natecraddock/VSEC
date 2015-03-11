@@ -28,6 +28,7 @@ bl_info = {
 
 import bpy
 import random
+import os
 
 class vseCrossfadesPanel(bpy.types.Panel):
     """VSE Crossfade Addon Panel"""
@@ -63,19 +64,32 @@ class vseCrossfades(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
+        """
+        OLD METHOD FOR TESTING
         strip1 = "C:\\Users\\Nate\\Desktop\\Gavin Harrison and Justin Rivest Raining Men Intro.mov"
         strip2 = "C:\\Users\\Nate\\Desktop\\render0001-0250.mp4"
         strip3 = "C:\\Users\\Nate\\Desktop\\Gavin Harrison and Justin Rivest Raining Men Intro.mov"
         strip4 = "C:\\Users\\Nate\\Desktop\\render0001-0250.mp4"
-
-        frame_offset = context.scene.vsec_crossfade_length
-        frame_offset_random = context.scene.vsec_crossfade_range
-
-        strips = []
         strips.append(strip1)
         strips.append(strip2)
         strips.append(strip3)
         strips.append(strip4)
+        """
+        #Get the files from the directory, based on file type
+        
+        path = context.scene.vsec_directory_path
+        
+        file_list = []
+        for f in os.listdir(path):
+            if f.endswith('.mp4') or f.endswith('.mov'):
+                file_list.append(f)
+                
+        strips = []
+        for strip in file_list:
+            strips.append(os.path.join(path, strip))
+        
+        frame_offset = context.scene.vsec_crossfade_length
+        frame_offset_random = context.scene.vsec_crossfade_range
 
         print()
 
