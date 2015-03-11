@@ -27,6 +27,7 @@ bl_info = {
 }
 
 import bpy
+import random
 
 class vseCrossfadesPanel(bpy.types.Panel):
     """VSE Crossfade Addon Panel"""
@@ -41,7 +42,16 @@ class vseCrossfadesPanel(bpy.types.Panel):
         layout = self.layout
         
         row = layout.row()
+        row.prop(context.scene, "vsec_mode")
+        
+        row = layout.row()
+        row.prop(context.scene, "vsec_directory_path", text="")
+        
+        row = layout.row()
         row.prop(context.scene, "vsec_crossfade_length")
+        row.prop(context.scene, "vsec_crossfade_range")
+        row = layout.row()
+        row.prop(context.scene, "vsec_auto_timeline")
         row = layout.row()
         row.operator("tools.vse_crossfade_addon")
         
@@ -58,7 +68,8 @@ class vseCrossfades(bpy.types.Operator):
         strip3 = "C:\\Users\\Nate\\Desktop\\Gavin Harrison and Justin Rivest Raining Men Intro.mov"
         strip4 = "C:\\Users\\Nate\\Desktop\\render0001-0250.mp4"
 
-        frame_offset = 10
+        frame_offset = context.scene.vsec_crossfade_length
+        frame_offset_random = context.scene.vsec_crossfade_range
 
         strips = []
         strips.append(strip1)
@@ -114,22 +125,40 @@ class vseCrossfades(bpy.types.Operator):
                 bpy.data.scenes["Scene"].sequence_editor.sequences_all[str(strip_number)].select = True
             
             
-            #Add the length of the current stip to the offset
-            offset += bpy.context.selected_sequences[0].frame_final_duration - 10
+            #Add the length of the current strip to the offset
+            randInt = random.randint(0, 1)
+            if randInt == 0:
+                offset += bpy.context.selected_sequences[0].frame_final_duration - (frame_offset - random.randint(0, frame_offset_random))
+            else:
+                offset += bpy.context.selected_sequences[0].frame_final_duration - (frame_offset + random.randint(0, frame_offset_random))
             
             strip_number += 1
 
             
         #Set the length of the timeline to the duration
-        bpy.context.area.type = 'VIEW_3D'
-        bpy.context.scene.frame_end = bpy.context.sequences[0].frame_final_duration
-
-        bpy.context.area.type = 'VIEW_3D'
+        if context.scene.vsec_auto_timeline:
+            bpy.ops.sequencer.select_all()
+            bpy.data.scenes["Scene"].sequence_editor.sequences_all[str(strip_number - 1)].select = True
+            last_frame = bpy.context.selected_sequences[0].frame_final_end
+            bpy.context.area.type = 'VIEW_3D'
+            bpy.context.scene.frame_end = last_frame - 1
+            
+            bpy.context.area.type = 'TIMELINE'
+            
+            bpy.ops.time.view_all()
+        
+            bpy.context.area.type = 'VIEW_3D'
+            
+        return {'FINISHED'}
         
 def register():
     bpy.utils.register_class(vseCrossfades)
     bpy.utils.register_class(vseCrossfadesPanel)
     bpy.types.Scene.vsec_crossfade_length = bpy.props.IntProperty(name="Crossfade Length", description="Length in frames of the crossfade", default=10, min = 1)
+    bpy.types.Scene.vsec_crossfade_range = bpy.props.IntProperty(name="Crossfade Variation", description="How much variation to add to the crossfade length", default=0, min=0)
+    bpy.types.Scene.vsec_auto_timeline = bpy.props.BoolProperty(name="Auto Timeline", description="Automatically set the end frame.", default = True)
+    bpy.types.Scene.vsec_directory_path = bpy.props.StringProperty(name="Directory", description="Location of the video files", default="", subtype='DIR_PATH')
+    bpy.types.Scene.vsec_mode = bpy.props.EnumProperty(name = "Mode", items = [("img", "Images", "Use only Images"), ("vid", "Video", "Use only Videos"), ("img_vid", "Images and Videos", "Use both Images and Videos")], default = "vid")
 
 def unregister():
     bpy.utils.unregister_class(vseCrossfades)
