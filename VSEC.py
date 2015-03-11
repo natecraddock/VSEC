@@ -40,6 +40,9 @@ class vseCrossfadesPanel(bpy.types.Panel):
     bl_region_type = 'TOOLS'
     
     def draw(self, context):
+        directory = context.scene.vsec_directory_path
+        mode = context.scene.vsec_mode
+        
         layout = self.layout
         
         row = layout.row()
@@ -49,8 +52,41 @@ class vseCrossfadesPanel(bpy.types.Panel):
         row.prop(context.scene, "vsec_directory_path", text="")
         
         row = layout.row()
+        
+        #Display information about selected directory
+       
+        
+        if directory == "":
+            row.label(text = "Choose a directory")
+        else:
+            #Check if it is a path
+            if os.path.exists(os.path.dirname(directory)):
+                #Print information about the path
+                
+                file_list = []
+                for f in os.listdir(directory):
+                    if mode == "vid":
+                        if f.endswith('.mp4') or f.endswith('.mov') or f.endswith('.avi') or f.endswith('.mpg') or f.endswith('.xvid'):
+                            file_list.append(f)
+                    elif mode == "img":
+                        if f.endswith('.bmp') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.tif') or f.endswith('.exr'):
+                            file_list.append(f)
+                row.label(text = "Number of files: " + str(len(file_list)))
+            else:
+                row.label(text = "Invalid Path")
+        
+        #Sorting methods
+        
+        #Image-Only options
+        if mode == "img":    
+            row = layout.row()
+            row.prop(context.scene, "vsec_image_length")
+            row.prop(context.scene, "vsec_image_length_range")
+        
+        layout.separator()
+        row = layout.row()
         row.prop(context.scene, "vsec_crossfade_length")
-        row.prop(context.scene, "vsec_crossfade_range")
+        row.prop(context.scene, "vsec_crossfade_length_range")
         row = layout.row()
         row.prop(context.scene, "vsec_auto_timeline")
         row = layout.row()
@@ -64,32 +100,26 @@ class vseCrossfades(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        """
-        OLD METHOD FOR TESTING
-        strip1 = "C:\\Users\\Nate\\Desktop\\Gavin Harrison and Justin Rivest Raining Men Intro.mov"
-        strip2 = "C:\\Users\\Nate\\Desktop\\render0001-0250.mp4"
-        strip3 = "C:\\Users\\Nate\\Desktop\\Gavin Harrison and Justin Rivest Raining Men Intro.mov"
-        strip4 = "C:\\Users\\Nate\\Desktop\\render0001-0250.mp4"
-        strips.append(strip1)
-        strips.append(strip2)
-        strips.append(strip3)
-        strips.append(strip4)
-        """
         #Get the files from the directory, based on file type
-        
         path = context.scene.vsec_directory_path
+        mode = context.scene.vsec_mode
         
         file_list = []
         for f in os.listdir(path):
             if f.endswith('.mp4') or f.endswith('.mov'):
                 file_list.append(f)
                 
+        for item in file_list:
+            print(item)
+                
         strips = []
         for strip in file_list:
             strips.append(os.path.join(path, strip))
+            
+        #Add sorting algorithms here
         
         frame_offset = context.scene.vsec_crossfade_length
-        frame_offset_random = context.scene.vsec_crossfade_range
+        frame_offset_random = context.scene.vsec_crossfade_length_range
 
         print()
 
@@ -109,13 +139,14 @@ class vseCrossfades(bpy.types.Operator):
             else:
                 channel_offset = 2
             
+            if mode == "vid":
+                bpy.ops.sequencer.movie_strip_add(filepath = strips[i], frame_start = offset)
+            elif mode == "img":
+                bpy.ops.sequencer.image_strip_add(directory = strips[i], frame_start = offset, frame_end = offset + context.scene.vsec_image_length)
             
-            print(strips[i])
-            print(offset)
-            bpy.ops.sequencer.movie_strip_add(filepath = strips[i], frame_start = offset)
-            
-            #Make into meta strip
-            bpy.ops.sequencer.meta_make()
+            #Make into meta strip if video
+            if mode == "vid":
+                bpy.ops.sequencer.meta_make()
             
             bpy.context.selected_sequences[0].name = str(strip_number)
             
@@ -169,10 +200,12 @@ def register():
     bpy.utils.register_class(vseCrossfades)
     bpy.utils.register_class(vseCrossfadesPanel)
     bpy.types.Scene.vsec_crossfade_length = bpy.props.IntProperty(name="Crossfade Length", description="Length in frames of the crossfade", default=10, min = 1)
-    bpy.types.Scene.vsec_crossfade_range = bpy.props.IntProperty(name="Crossfade Variation", description="How much variation to add to the crossfade length", default=0, min=0)
+    bpy.types.Scene.vsec_crossfade_length_range = bpy.props.IntProperty(name="Variation", description="How much variation to add to the crossfade length", default=0, min=0)
+    bpy.types.Scene.vsec_image_length = bpy.props.IntProperty(name="Image Length", description="How long should each image be?", default=75, min=1)
+    bpy.types.Scene.vsec_image_length_range = bpy.props.IntProperty(name="Variation", description="How much variation to add to the image length", default=0, min=0)
     bpy.types.Scene.vsec_auto_timeline = bpy.props.BoolProperty(name="Auto Timeline", description="Automatically set the end frame.", default = True)
-    bpy.types.Scene.vsec_directory_path = bpy.props.StringProperty(name="Directory", description="Location of the video files", default="", subtype='DIR_PATH')
-    bpy.types.Scene.vsec_mode = bpy.props.EnumProperty(name = "Mode", items = [("img", "Images", "Use only Images"), ("vid", "Video", "Use only Videos"), ("img_vid", "Images and Videos", "Use both Images and Videos")], default = "vid")
+    bpy.types.Scene.vsec_directory_path = bpy.props.StringProperty(name="Directory", description="Choose the folder where the video files are located", default="", subtype='DIR_PATH')
+    bpy.types.Scene.vsec_mode = bpy.props.EnumProperty(name = "Mode", items = [("img", "Images", "Use only Images"), ("vid", "Video", "Use only Videos")], default = "vid")
 
 def unregister():
     bpy.utils.unregister_class(vseCrossfades)
