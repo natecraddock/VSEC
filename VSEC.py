@@ -128,9 +128,8 @@ class vseCrossfades(bpy.types.Operator):
         #Sorting
         if sort_method == "alpha":
             #Should already be sorted
-        #elif sort_method == "size":
-         
-        
+            print("sorted")
+            
         strips = []
         for strip in file_list:
             strips.append(os.path.join(path, strip))
