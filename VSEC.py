@@ -21,7 +21,7 @@ bl_info = {
     "author": "Nathan Craddock",
     "version": (1, 0, 0),
     "blender": (2, 7, 3),
-    "location": "Object Mode >> Tool Shelf >> VSE Crossfade (Tab)",
+    "location": "VSE >> Properties Panel >> VSE Crossfade",
     "description": "Allows the user to select a directory, and it adds the files in the directory to the VSE with crossfades.",
     "category": "Tools"
 }
@@ -36,8 +36,8 @@ class vseCrossfadesPanel(bpy.types.Panel):
     bl_idname = "tools.vse_crossfade_panel"
     bl_context = "objectmode"
     bl_label = "VSE Crossfades"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_space_type = 'SEQUENCE_EDITOR'
+    bl_region_type = 'UI'
     
     def draw(self, context):
         directory = context.scene.vsec_directory_path
@@ -211,7 +211,7 @@ class vseCrossfades(bpy.types.Operator):
             
             bpy.ops.time.view_all()
         
-            bpy.context.area.type = 'VIEW_3D'
+            bpy.context.area.type = 'SEQUENCE_EDITOR'
             
         return {'FINISHED'}
         
