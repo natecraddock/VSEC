@@ -61,13 +61,15 @@ class vseCrossfadesPanel(bpy.types.Panel):
             if os.path.exists(os.path.dirname(directory)):
                 #Print information about the path
                 
+                compatible_vid = ('.mp4', '.mov', '.avi', '.mpg', '.xvid')
+                compatible_img = ('.bmp', '.png', '.jpg', '.tif', '.exr')
                 file_list = []
                 for f in os.listdir(directory):
                     if mode == "vid":
-                        if f.endswith('.mp4') or f.endswith('.mov') or f.endswith('.avi') or f.endswith('.mpg') or f.endswith('.xvid'):
+                        if f.endswith(compatible_vid):
                             file_list.append(f)
                     elif mode == "img":
-                        if f.endswith('.bmp') or f.endswith('.png') or f.endswith('.jpg') or f.endswith('.tif') or f.endswith('.exr'):
+                        if f.endswith(compatible_img):
                             file_list.append(f)
                 row.label(text = "Number of files: " + str(len(file_list)))
             else:
